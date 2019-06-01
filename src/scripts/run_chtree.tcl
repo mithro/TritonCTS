@@ -107,7 +107,7 @@ exec cp -rf $path $dir/place.def
 exec cp -rf $verilog $dir/place.v
 cd $dir
 
-exec python ../src/scripts/extract_locations.py place.def > cell_locs.txt
+exec ../src/scripts/extract_locations.py place.def > cell_locs.txt
 exec cp ../src/tech/lut-$tech.txt lut.txt
 exec cp ../src/tech/sol_list-$tech.txt sol_list.txt
 
@@ -137,8 +137,8 @@ exec sed -i s/_CK_PORT_/$ck_port/g parse_sol.tcl
 exec sed -i s/_ROOT_BUFF_/$root_buff/g parse_sol.tcl
 exec sed -i s/_BUFF_REGEX_/$buf_regex/g parse_sol.tcl
 
-puts "../third_party/lefdef2cts -lef $lef -def $path -cpin $ck_pin -cts sinks.txt -blk blks.txt" 
-catch {exec ../third_party/lefdef2cts -lef $lef -def $path -cpin $ck_pin -cts sinks.txt -blk blks_tmp.txt}
+puts "lefdef2cts -lef $lef -def $path -cpin $ck_pin -cts sinks.txt -blk blks.txt"
+catch {exec lefdef2cts -lef $lef -def $path -cpin $ck_pin -cts sinks.txt -blk blks_tmp.txt}
 
 set blkFileIn [open blks_tmp.txt r]              
 set blkFileOut [open blks.txt w]              
@@ -181,7 +181,7 @@ exec cp -rf ../src/scripts/update_def.py update_def.py
 exec sed -i s/_CK_PIN_/$ck_pin/g update_def.py
 exec sed -i s/_CK_PORT_/$ck_port/g update_def.py
 exec sed -i s/_BUFF_OUT_PIN_/$buf_out_pin/g update_def.py
-exec python update_def.py > cts.def 
+exec ./update_def.py > cts.def
 
 set width  [expr $width*$db_ratio]
 set height [expr $height*$db_ratio]
@@ -194,15 +194,15 @@ if {[file exists $replace_dir]} {
 	exec rm -rf 
 }
 
-set legPath [file normalize ../third_party/ntuplace4h]
+set legPath [exec which ntuplace4h]
 puts "Running legalization..."
-puts "../third_party/RePlAce -bmflag etc -lef $lef -def cts.def -output leg -t 1 -dpflag NTU4 -dploc $legPath -onlyLG -onlyDP -fragmentedRow -denDP 0.9 -plot -pcofmax 1.04"
-catch {exec ../third_party/RePlAce -bmflag etc -lef $lef -def cts.def -output leg -t 1 -dpflag NTU4 -dploc $legPath -onlyLG -onlyDP -fragmentedRow -denDP 0.9 -plot -pcofmax 1.04 > leg_rpt} 
+puts "RePlAce -bmflag etc -lef $lef -def cts.def -output leg -t 1 -dpflag NTU4 -dploc $legPath -onlyLG -onlyDP -fragmentedRow -denDP 0.9 -pcofmax 1.04"
+catch {exec RePlAce -bmflag etc -lef $lef -def cts.def -output leg -t 1 -dpflag NTU4 -dploc $legPath -onlyLG -onlyDP -fragmentedRow -denDP 0.9 -pcofmax 1.04 > leg_rpt}
 exec cp leg/etc/cts/experiment000/cts_final.def post_leg.def
 #exec cp cts.def post_leg.def
 
 # Update cell locations
-exec python ../src/scripts/extract_locations.py post_leg.def > cell_locs_final.txt
+exec ../src/scripts/extract_locations.py post_leg.def > cell_locs_final.txt
 
 #exec echo "$ck_port" > clockNet.txt
 #exec grep ck_net* post_leg.def | awk {{print $2}} >> clockNet.txt
@@ -230,6 +230,6 @@ exec python ../src/scripts/extract_locations.py post_leg.def > cell_locs_final.t
 #exec python merge_guides.py > cts.guides
 
 # Generate the final def and verilog
-exec python ../src/scripts/verilog_preprocess.py
-exec python remove_dummies.py > cts_final.def
+exec ../src/scripts/verilog_preprocess.py
+exec ./remove_dummies.py > cts_final.def
 
